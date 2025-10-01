@@ -143,3 +143,84 @@ def equalize_image_rgb(img_pil):
     return eq_pil
 
 
+def convert_labels_to_yolo(label_folder='data/labels', output_folder='data/labels_yolo'):
+    """
+    Converte labels com polígonos normalizados para formato YOLO (bbox).
+    
+    label_folder : pasta com labels originais
+    output_folder: pasta onde os labels YOLO serão salvos
+    """
+    os.makedirs(output_folder, exist_ok=True)
+
+    for filename in os.listdir(label_folder):
+        if not filename.lower().endswith(".txt"):
+            continue
+
+        input_path = os.path.join(label_folder, filename)
+        output_path = os.path.join(output_folder, filename)
+
+        with open(input_path, 'r', encoding='utf-8') as f:
+            lines = f.read().strip().splitlines()
+
+        yolo_lines = []
+        for line in lines:
+            parts = line.strip().split()
+            if len(parts) < 3:
+                continue
+
+            class_id = parts[0]
+            coords = list(map(float, parts[1:]))
+
+            xs = coords[0::2]  # x1, x2, ...
+            ys = coords[1::2]  # y1, y2, ...
+
+            x_min, x_max = min(xs), max(xs)
+            y_min, y_max = min(ys), max(ys)
+
+            x_center = (x_min + x_max) / 2
+            y_center = (y_min + y_max) / 2
+            width    = x_max - x_min
+            height   = y_max - y_min
+
+            yolo_lines.append(f"{class_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}")
+
+        # Salva o arquivo YOLO
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write("\n".join(yolo_lines))
+
+    print(f"Conversão concluída! Labels salvos em '{output_folder}'")
+
+
+def plot_yolo_bbox(img, yolo_label_path):
+    """
+    Plota a imagem com os bounding boxes convertidos para YOLO.
+    
+    img : PIL.Image
+    yolo_label_path : caminho do arquivo .txt convertido
+    """
+    width, height = img.size
+    draw = ImageDraw.Draw(img)
+
+    with open(yolo_label_path, 'r', encoding='utf-8') as f:
+        for line in f.read().strip().splitlines():
+            parts = line.strip().split()
+            if len(parts) != 5:
+                continue
+            class_id, x_c, y_c, w, h = parts
+            class_id = int(class_id)
+            x_c, y_c, w, h = map(float, (x_c, y_c, w, h))
+
+            # Conversão de coordenadas normalizadas -> pixels
+            x_min = (x_c - w/2) * width
+            x_max = (x_c + w/2) * width
+            y_min = (y_c - h/2) * height
+            y_max = (y_c + h/2) * height
+
+            # Desenha retângulo
+            draw.rectangle([x_min, y_min, x_max, y_max], outline="red", width=2)
+            draw.text((x_min, y_min), str(class_id), fill="yellow")
+
+    plt.figure(figsize=(6,6))
+    plt.imshow(img)
+    plt.axis("off")
+    plt.show()
