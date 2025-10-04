@@ -1,7 +1,0 @@
-path: dataset  # raiz do dataset
-train: images/train
-val: images/val
-test: images/test
-
-nc: 3  # número de classes (buraco, rachão, bueiro)
-names: ['rachao', 'bueiro', 'buraco']
