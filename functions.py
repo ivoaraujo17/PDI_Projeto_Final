@@ -52,3 +52,22 @@ def load_and_resize_images(folder_path='dataset', size=(512, 512)):
     print(f"Total de labels: {len(labels)}")
     
     return np.array(imagens), np.array(imgs_mask), np.array(labels)
+
+
+# Função para carregar imagens originais SEM filtro/denoise
+def load_original_images(folder_path='dataset', size=(512, 512)):
+    classes = ["buracos", "rachaduras", "boas"]
+    imagens = []
+    labels = []
+    for label, classe in enumerate(classes):
+        pasta = os.path.join(folder_path, classe)
+        for file in os.listdir(pasta):
+            if file.endswith((".jpg", ".png", ".jpeg")):
+                caminho = os.path.join(pasta, file)
+                img = cv2.imread(caminho)
+                img = cv2.resize(img, size)
+                imagens.append(img)
+                labels.append(label)
+    print(f"Total de imagens originais: {len(imagens)}")
+    print(f"Total de labels: {len(labels)}")
+    return np.array(imagens), np.array(labels)
